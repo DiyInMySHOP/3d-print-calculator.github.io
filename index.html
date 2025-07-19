@@ -15,7 +15,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            margin: 0;
         }
 
         .container {
@@ -31,23 +32,36 @@
         .header {
             background: linear-gradient(45deg, #ff6b6b, #ee5a52);
             color: white;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2em;
+            margin-bottom: 5px;
             font-weight: 700;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 1em;
             opacity: 0.9;
         }
 
+        .developer-credit {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.7em;
+            opacity: 0.8;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
         .form-section {
-            padding: 40px;
+            padding: 20px;
         }
 
         .form-grid {
@@ -57,7 +71,7 @@
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
@@ -106,8 +120,8 @@
 
         .result {
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            padding: 30px;
-            margin-top: 30px;
+            padding: 20px;
+            margin-top: 20px;
             border-radius: 15px;
             border-left: 5px solid #4ecdc4;
         }
@@ -162,7 +176,7 @@
 
         .settings-section {
             background: #f8f9fa;
-            padding: 30px;
+            padding: 20px;
             border-top: 1px solid #e0e0e0;
         }
 
@@ -198,11 +212,29 @@
             }
             
             .header h1 {
-                font-size: 2em;
+                font-size: 1.8em;
             }
             
             .cost-breakdown {
                 grid-template-columns: 1fr;
+            }
+
+            .developer-credit {
+                position: static;
+                margin-bottom: 10px;
+                display: inline-block;
+            }
+
+            .container {
+                margin: 5px;
+            }
+
+            .form-section, .settings-section {
+                padding: 15px;
+            }
+
+            body {
+                padding: 5px;
             }
         }
 
@@ -216,6 +248,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <div class="developer-credit">by DIY IN MY SHOP</div>
             <h1>🖨️ 3D Print Cost Calculator</h1>
             <p>คำนวณราคาค่าพิมพ์ 3D แบบแม่นยำ</p>
         </div>
@@ -350,6 +383,7 @@
 
         <div class="footer">
             <p>© 2025 3D Print Cost Calculator | เครื่องมือคำนวณราคาพิมพ์ 3D</p>
+            <p style="margin-top: 10px; font-size: 0.8em; opacity: 0.8;">Developed by DIY IN MY SHOP</p>
         </div>
     </div>
 
