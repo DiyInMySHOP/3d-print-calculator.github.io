@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เครื่องคำนวณราคา 3D Print</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .calculator {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .calculator {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .range-container {
+            position: relative;
+        }
+
+        .range-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #4CAF50 0%, #FFC107 50%, #FF5722 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        .range-value {
+            text-align: center;
+            margin-top: 5px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .speed-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .speed-option {
+            padding: 12px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .speed-option:hover {
+            border-color: #667eea;
+        }
+
+        .speed-option.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+            color: #667eea;
+        }
+
+        .speed-option .title {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .speed-option .desc {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-info .title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .toggle-info .desc {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-switch .slider {
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .slider {
+            transform: translateX(24px);
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .total-price {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .total-price .label {
+            font-size: 18px;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        .total-price .amount {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .total-price .time {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .breakdown {
+            display: grid;
+            gap: 12px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .share-btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .share-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+
+        .icon {
+            color: #667eea;
+        }
+
+        .result-icon {
+            color: rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-calculator"></i> คำนวณราคา 3D Print</h1>
+            <p>คำนวณราคาพิมพ์ 3D ที่แม่นยำและรวดเร็ว</p>
+        </div>
+
+        <div class="calculator">
+            <!-- Input Form -->
+            <div class="card">
+                <h2><i class="fas fa-cube icon"></i> ข้อมูลการพิมพ์</h2>
+
+                <!-- น้ำหนัก -->
+                <div class="form-group">
+                    <label for="weight">น้ำหนักชิ้นงาน (กรัม)</label>
+                    <input type="number" id="weight" placeholder="เช่น 250" min="0" step="0.1">
+                </div>
+
+                <!-- ประเภทพลาสติก -->
+                <div class="form-group">
+                    <label for="plasticType">ประเภทพลาสติก</label>
+                    <select id="plasticType">
+                        <option value="800">PLA - 800 บาท/กก.</option>
+                        <option value="900">ABS - 900 บาท/กก.</option>
+                        <option value="1200">PETG - 1,200 บาท/กก.</option>
+                        <option value="1800">TPU - 1,800 บาท/กก.</option>
+                        <option value="1500">ASA - 1,500 บาท/กก.</option>
+                        <option value="2500">PC - 2,500 บาท/กก.</option>
+                    </select>
+                </div>
+
+                <!-- Infill -->
+                <div class="form-group">
+                    <label>Infill (%)</label>
+                    <div class="range-container">
+                        <input type="range" class="range-slider" id="infill" min="10" max="100" value="20">
+                        <div class="range-value" id="infillValue">20%</div>
+                    </div>
+                </div>
+
+                <!-- ความเร็วพิมพ์ -->
+                <div class="form-group">
+                    <label><i class="fas fa-clock icon"></i> ความเร็วพิมพ์</label>
+                    <div class="speed-options">
+                        <div class="speed-option" data-speed="8">
+                            <div class="title">ช้า</div>
+                            <div class="desc">คุณภาพสูง</div>
+                        </div>
+                        <div class="speed-option active" data-speed="5">
+                            <div class="title">ปกติ</div>
+                            <div class="desc">สมดุล</div>
+                        </div>
+                        <div class="speed-option" data-speed="3">
+                            <div class="title">เร็ว</div>
+                            <div class="desc">ประหยัดเวลา</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ตัวเลือกเพิ่มเติม -->
+                <div class="form-group">
+                    <div class="toggle-container">
+                        <div class="toggle-info">
+                            <div class="title">Support Material</div>
+                            <div class="desc">เพิ่ม 30% ของราคาวัสดุ</div>
+                        </div>
+                        <div class="toggle-switch" id="supportToggle">
+                            <div class="slider"></div>
+                        </div>
+                    </div>
+
+                    <div class="toggle-container">
+                        <div class="toggle-info">
+                            <div class="title">Post Processing</div>
+                            <div class="desc">ขัด ทาสี หรือประกอบ (+100 บาท)</div>
+                        </div>
+                        <div class="toggle-switch" id="postProcessToggle">
+                            <div class="slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="result-card">
+                <h2><i class="fas fa-bolt result-icon"></i> ผลการคำนวณ</h2>
+                
+                <div class="total-price">
+                    <div class="label">ราคารวมทั้งหมด</div>
+                    <div class="amount" id="totalPrice">0 บาท</div>
+                    <div class="time">เวลาพิมพ์ประมาณ <span id="printTime">0</span> ชั่วโมง</div>
+                </div>
+
+                <div class="breakdown" id="breakdown">
+                    <div class="breakdown-item">
+                        <span>ค่าวัสดุพลาสติก</span>
+                        <span id="materialCost">0 บาท</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>ค่าไฟฟ้า</span>
+                        <span id="electricityCost">0 บาท</span>
+                    </div>
+                    <div class="breakdown-item" id="postProcessItem" style="display: none;">
+                        <span>ค่า Post Processing</span>
+                        <span>100 บาท</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span>ค่าแรงและกำไร</span>
+                        <span id="laborCost">0 บาท</span>
+                    </div>
+                </div>
+
+                <button class="share-btn" onclick="shareResult()">
+                    <i class="fas fa-copy"></i> คัดลอกผลลัพธ์
+                </button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>💡 ราคาเป็นเพียงการประมาณการ อาจแตกต่างจากราคาจริงตามความซับซ้อนของชิ้นงาน</p>
+        </div>
+    </div>
+
+    <script>
+        // ตัวแปรสถานะ
+        let formData = {
+            weight: 0,
+            plasticPrice: 800,
+            infill: 20,
+            printSpeed: 5,
+            support: false,
+            postProcess: false
+        };
+
+        // ค่าไฟต่อชั่วโมง (บาท)
+        const electricityCostPerHour = 6;
+
+        // อัปเดตค่า Infill
+        document.getElementById('infill').addEventListener('input', function() {
+            formData.infill = parseInt(this.value);
+            document.getElementById('infillValue').textContent = this.value + '%';
+            calculatePrice();
+        });
+
+        // อัปเดตน้ำหนัก
+        document.getElementById('weight').addEventListener('input', function() {
+            formData.weight = parseFloat(this.value) || 0;
+            calculatePrice();
+        });
+
+        // อัปเดตประเภทพลาสติก
+        document.getElementById('plasticType').addEventListener('change', function() {
+            formData.plasticPrice = parseInt(this.value);
+            calculatePrice();
+        });
+
+        // ความเร็วพิมพ์
+        document.querySelectorAll('.speed-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.speed-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                formData.printSpeed = parseInt(this.dataset.speed);
+                calculatePrice();
+            });
+        });
+
+        // Toggle switches
+        document.getElementById('supportToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+            formData.support = this.classList.contains('active');
+            calculatePrice();
+        });
+
+        document.getElementById('postProcessToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+            formData.postProcess = this.classList.contains('active');
+            document.getElementById('postProcessItem').style.display = formData.postProcess ? 'flex' : 'none';
+            calculatePrice();
+        });
+
+        // ฟังก์ชันคำนวณราคา
+        function calculatePrice() {
+            if (formData.weight <= 0) {
+                document.getElementById('totalPrice').textContent = '0 บาท';
+                document.getElementById('printTime').textContent = '0';
+                document.getElementById('materialCost').textContent = '0 บาท';
+                document.getElementById('electricityCost').textContent = '0 บาท';
+                document.getElementById('laborCost').textContent = '0 บาท';
+                return;
+            }
+
+            // คำนวณราคาวัสดุ
+            let materialCost = (formData.weight / 1000) * formData.plasticPrice;
+            materialCost = materialCost * (formData.infill / 100 + 0.5);
+            
+            if (formData.support) {
+                materialCost = materialCost * 1.3;
+            }
+
+            // คำนวณเวลาพิมพ์และค่าไฟ
+            const printTime = (formData.weight / 100) * formData.printSpeed;
+            const electricityCost = printTime * electricityCostPerHour;
+
+            // ค่า post processing
+            const postProcessCost = formData.postProcess ? 100 : 0;
+
+            // ค่าแรงและกำไร (50% ของต้นทุน)
+            const laborAndProfit = (materialCost + electricityCost) * 0.5;
+
+            // ราคารวม
+            const totalCost = materialCost + electricityCost + postProcessCost + laborAndProfit;
+
+            // อัปเดต UI
+            document.getElementById('totalPrice').textContent = Math.round(totalCost) + ' บาท';
+            document.getElementById('printTime').textContent = printTime.toFixed(1);
+            document.getElementById('materialCost').textContent = Math.round(materialCost) + ' บาท';
+            document.getElementById('electricityCost').textContent = Math.round(electricityCost) + ' บาท';
+            document.getElementById('laborCost').textContent = Math.round(laborAndProfit) + ' บาท';
+        }
+
+        // ฟังก์ชันแชร์ผลลัพธ์
+        function shareResult() {
+            const totalPrice = document.getElementById('totalPrice').textContent;
+            const printTime = document.getElementById('printTime').textContent;
+            const plasticType = document.getElementById('plasticType').selectedOptions[0].text.split(' - ')[0];
+            
+            const shareText = `ราคาพิมพ์ 3D: ${totalPrice}
+น้ำหนัก: ${formData.weight}g
+วัสดุ: ${plasticType}
+Infill: ${formData.infill}%
+เวลาพิมพ์: ${printTime} ชั่วโมง`;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('คัดลอกผลลัพธ์แล้ว! 📋');
+                });
+            } else {
+                // สำหรับเบราว์เซอร์เก่า
+                const textArea = document.createElement('textarea');
+                textArea.value = shareText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('คัดลอกผลลัพธ์แล้ว! 📋');
+            }
+        }
+
+        // คำนวณครั้งแรกเมื่อโหลดหน้า
+        calculatePrice();
+    </script>
+</body>
+</html>
