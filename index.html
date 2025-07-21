@@ -248,6 +248,30 @@
             transform: translateX(25px);
         }
 
+        .cost-input {
+            width: 80px;
+            padding: 8px 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            margin-left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        .cost-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .toggle-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .result-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -546,10 +570,13 @@
                     <div class="toggle-container">
                         <div class="toggle-info">
                             <div class="title">Support Material</div>
-                            <div class="desc">เพิ่ม 30% ของราคาวัสดุและเวลา</div>
+                            <div class="desc">เพิ่มวัสดุและเวลาพิมพ์</div>
                         </div>
-                        <div class="toggle-switch" id="supportToggle">
-                            <div class="slider"></div>
+                        <div class="toggle-controls">
+                            <input type="number" class="cost-input" id="supportCost" value="50" min="0" placeholder="50" disabled>
+                            <div class="toggle-switch" id="supportToggle">
+                                <div class="slider"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -566,10 +593,13 @@
                     <div class="toggle-container">
                         <div class="toggle-info">
                             <div class="title">Post Processing</div>
-                            <div class="desc">ขัด ทาสี หรือประกอบ (+100 บาท)</div>
+                            <div class="desc">ขัด ทาสี หรือประกอบ</div>
                         </div>
-                        <div class="toggle-switch" id="postProcessToggle">
-                            <div class="slider"></div>
+                        <div class="toggle-controls">
+                            <input type="number" class="cost-input" id="postProcessCost" value="100" min="0" placeholder="100" disabled>
+                            <div class="toggle-switch" id="postProcessToggle">
+                                <div class="slider"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -629,12 +659,19 @@
                         </div>
                         <span class="value" id="machineCostDisplay">0 บาท</span>
                     </div>
+                    <div class="breakdown-item" id="supportItem" style="display: none;">
+                        <div class="label">
+                            <i class="fas fa-hands-helping result-icon"></i>
+                            <span>ค่า Support Material</span>
+                        </div>
+                        <span class="value" id="supportCostDisplay">0 บาท</span>
+                    </div>
                     <div class="breakdown-item" id="postProcessItem" style="display: none;">
                         <div class="label">
                             <i class="fas fa-paint-brush result-icon"></i>
                             <span>ค่า Post Processing</span>
                         </div>
-                        <span class="value">100 บาท</span>
+                        <span class="value" id="postProcessCostDisplay">0 บาท</span>
                     </div>
                     <div class="breakdown-item">
                         <div class="label">
@@ -673,8 +710,10 @@
             nozzleSize: 0.4,
             printer: 'ender3',
             support: false,
+            supportCost: 50,
             brim: false,
             postProcess: false,
+            postProcessCost: 100,
             electricityCost: 6,
             laborMargin: 50,
             machineCost: 20,
@@ -715,6 +754,18 @@
             calculatePrice();
         });
 
+        // Support cost input
+        document.getElementById('supportCost').addEventListener('input', function() {
+            formData.supportCost = parseFloat(this.value) || 0;
+            calculatePrice();
+        });
+
+        // Post process cost input
+        document.getElementById('postProcessCost').addEventListener('input', function() {
+            formData.postProcessCost = parseFloat(this.value) || 0;
+            calculatePrice();
+        });
+
         // ความเร็วพิมพ์
         document.querySelectorAll('.speed-option').forEach(option => {
             option.addEventListener('click', function() {
@@ -739,6 +790,8 @@
         document.getElementById('supportToggle').addEventListener('click', function() {
             this.classList.toggle('active');
             formData.support = this.classList.contains('active');
+            document.getElementById('supportCost').disabled = !formData.support;
+            document.getElementById('supportItem').style.display = formData.support ? 'flex' : 'none';
             calculatePrice();
         });
 
@@ -751,285 +804,11 @@
         document.getElementById('postProcessToggle').addEventListener('click', function() {
             this.classList.toggle('active');
             formData.postProcess = this.classList.contains('active');
+            document.getElementById('postProcessCost').disabled = !formData.postProcess;
             document.getElementById('postProcessItem').style.display = formData.postProcess ? 'flex' : 'none';
             calculatePrice();
         });
 
         // Settings
         document.getElementById('electricityCost').addEventListener('input', function() {
-            formData.electricityCost = parseFloat(this.value) || 0;
-            calculatePrice();
-        });
-
-        document.getElementById('laborMargin').addEventListener('input', function() {
-            formData.laborMargin = parseFloat(this.value) || 0;
-            calculatePrice();
-        });
-
-        document.getElementById('machineCost').addEventListener('input', function() {
-            formData.machineCost = parseFloat(this.value) || 0;
-            calculatePrice();
-        });
-
-        document.getElementById('failureRate').addEventListener('input', function() {
-            formData.failureRate = parseFloat(this.value) || 0;
-            calculatePrice();
-        });
-
-        // ฟังก์ชันคำนวณราคา
-        function calculatePrice() {
-            if (formData.weight <= 0) {
-                resetDisplay();
-                return;
-            }
-
-            // เพิ่มเอฟเฟกต์ loading
-            document.querySelector('.total-price').classList.add('calculating');
-            setTimeout(() => {
-                document.querySelector('.total-price').classList.remove('calculating');
-            }, 500);
-
-            // คำนวณราคาวัสดุ
-            let materialWeight = formData.weight / 1000; // กิโลกรัม
-            let materialCost = materialWeight * formData.plasticPrice;
-            
-            // ปรับตาม Infill
-            materialCost = materialCost * (formData.infill / 100 * 0.8 + 0.2);
-            
-            // Support และ Brim
-            if (formData.support) {
-                materialCost = materialCost * 1.3;
-            }
-            if (formData.brim) {
-                materialCost = materialCost * 1.1;
-            }
-
-            // คำนวณเวลาพิมพ์
-            let baseTime = (formData.weight / 40) * formData.printSpeed;
-            
-            // ปรับตาม Layer Height
-            baseTime = baseTime * (0.2 / formData.layerHeight);
-            
-            // ปรับตาม Nozzle Size
-            baseTime = baseTime * (0.4 / formData.nozzleSize) * 0.8;
-            
-            // ปรับตามเครื่องพิมพ์
-            const printer = printerData[formData.printer];
-            let printTime = baseTime / printer.speed;
-            
-            // เพิ่มเวลาสำหรับ Support
-            if (formData.support) {
-                printTime = printTime * 1.3;
-            }
-
-            // คำนวณค่าไฟฟ้า
-            const electricityCost = printTime * formData.electricityCost;
-
-            // คำนวณค่าเสื่อมเครื่องจักร
-            const machineCost = printTime * formData.machineCost;
-
-            // ค่า post processing
-            const postProcessCost = formData.postProcess ? 100 : 0;
-
-            // รวมต้นทุน
-            const totalCostBeforeMargin = materialCost + electricityCost + machineCost + postProcessCost;
-            
-            // ปรับตาม Failure Rate
-            const failureAdjustment = 1 + (formData.failureRate / 100);
-            const adjustedCost = totalCostBeforeMargin * failureAdjustment;
-
-            // ค่าแรงและกำไร
-            const laborAndProfit = adjustedCost * (formData.laborMargin / 100);
-
-            // ราคารวม
-            const totalCost = adjustedCost + laborAndProfit;
-
-            // อัปเดต UI
-            updateDisplay(totalCost, printTime, materialCost, electricityCost, machineCost, laborAndProfit);
-        }
-
-        function updateDisplay(total, time, material, electricity, machine, labor) {
-            document.getElementById('totalPrice').textContent = Math.round(total) + ' บาท';
-            document.getElementById('printTime').textContent = time.toFixed(1);
-            document.getElementById('materialCost').textContent = Math.round(material) + ' บาท';
-            document.getElementById('electricityCostDisplay').textContent = Math.round(electricity) + ' บาท';
-            document.getElementById('machineCostDisplay').textContent = Math.round(machine) + ' บาท';
-            document.getElementById('laborCost').textContent = Math.round(labor) + ' บาท';
-        }
-
-        function resetDisplay() {
-            document.getElementById('totalPrice').textContent = '0 บาท';
-            document.getElementById('printTime').textContent = '0';
-            document.getElementById('materialCost').textContent = '0 บาท';
-            document.getElementById('electricityCostDisplay').textContent = '0 บาท';
-            document.getElementById('machineCostDisplay').textContent = '0 บาท';
-            document.getElementById('laborCost').textContent = '0 บาท';
-        }
-
-        // ฟังก์ชันแชร์ผลลัพธ์
-        function shareResult() {
-            const totalPrice = document.getElementById('totalPrice').textContent;
-            const printTime = document.getElementById('printTime').textContent;
-            const plasticType = document.getElementById('plasticType').selectedOptions[0].text.split(' - ')[0];
-            const printer = document.querySelector('.printer-option.active .name').textContent;
-            
-            const shareText = `🖨️ ราคาพิมพ์ 3D: ${totalPrice}
-📏 น้ำหนัก: ${formData.weight}g
-🧱 วัสดุ: ${plasticType}
-📊 Infill: ${formData.infill}%
-🖨️ เครื่อง: ${printer}
-⏱️ เวลาพิมพ์: ${printTime} ชั่วโมง
-${formData.support ? '🔧 มี Support\n' : ''}${formData.postProcess ? '🎨 มี Post Processing\n' : ''}
-📱 คำนวณจาก 3D Print Calculator Pro`;
-
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(shareText).then(() => {
-                    showNotification('คัดลอกผลลัพธ์แล้ว! 📋', 'success');
-                });
-            } else {
-                // สำหรับเบราว์เซอร์เก่า
-                const textArea = document.createElement('textarea');
-                textArea.value = shareText;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showNotification('คัดลอกผลลัพธ์แล้ว! 📋', 'success');
-            }
-        }
-
-        // ฟังก์ชันรีเซ็ต
-        function resetCalculator() {
-            // รีเซ็ตค่า
-            document.getElementById('weight').value = '';
-            document.getElementById('plasticType').value = '800';
-            document.getElementById('infill').value = '20';
-            document.getElementById('layerHeight').value = '0.2';
-            document.getElementById('nozzleSize').value = '0.4';
-            
-            // รีเซ็ต toggles
-            document.querySelectorAll('.toggle-switch').forEach(toggle => {
-                toggle.classList.remove('active');
-            });
-            
-            // รีเซ็ต speed และ printer
-            document.querySelectorAll('.speed-option').forEach(o => o.classList.remove('active'));
-            document.querySelector('.speed-option[data-speed="5"]').classList.add('active');
-            
-            document.querySelectorAll('.printer-option').forEach(o => o.classList.remove('active'));
-            document.querySelector('.printer-option[data-printer="ender3"]').classList.add('active');
-            
-            // รีเซ็ตตัวแปร
-            formData = {
-                weight: 0,
-                plasticPrice: 800,
-                infill: 20,
-                printSpeed: 5,
-                layerHeight: 0.2,
-                nozzleSize: 0.4,
-                printer: 'ender3',
-                support: false,
-                brim: false,
-                postProcess: false,
-                electricityCost: 6,
-                laborMargin: 50,
-                machineCost: 20,
-                failureRate: 5
-            };
-            
-            document.getElementById('infillValue').textContent = '20%';
-            document.getElementById('postProcessItem').style.display = 'none';
-            
-            resetDisplay();
-            showNotification('รีเซ็ตเรียบร้อย! 🔄', 'info');
-        }
-
-        // ฟังก์ชันแสดงการแจ้งเตือน
-        function showNotification(message, type = 'info') {
-            // สร้าง element การแจ้งเตือน
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 25px;
-                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3'};
-                color: white;
-                border-radius: 10px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 1000;
-                font-weight: bold;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-            `;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // แสดง notification
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-            
-            // ซ่อน notification
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-
-        // เริ่มต้นการทำงาน
-        calculatePrice();
-
-        // Auto-save settings to localStorage (ถ้าต้องการ)
-        function saveSettings() {
-            const settings = {
-                electricityCost: formData.electricityCost,
-                laborMargin: formData.laborMargin,
-                machineCost: formData.machineCost,
-                failureRate: formData.failureRate
-            };
-            // สำหรับใช้งานจริง สามารถเก็บใน localStorage ได้
-            // localStorage.setItem('3d-print-settings', JSON.stringify(settings));
-        }
-
-        // เพิ่ม keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey || e.metaKey) {
-                switch(e.key) {
-                    case 'c':
-                        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
-                            e.preventDefault();
-                            shareResult();
-                        }
-                        break;
-                    case 'r':
-                        e.preventDefault();
-                        resetCalculator();
-                        break;
-                }
-            }
-        });
-
-        // เพิ่มการตรวจสอบค่าที่ป้อน
-        document.querySelectorAll('input[type="number"]').forEach(input => {
-            input.addEventListener('blur', function() {
-                const min = parseFloat(this.getAttribute('min'));
-                const max = parseFloat(this.getAttribute('max'));
-                let value = parseFloat(this.value);
-                
-                if (!isNaN(min) && value < min) {
-                    this.value = min;
-                    this.dispatchEvent(new Event('input'));
-                }
-                if (!isNaN(max) && value > max) {
-                    this.value = max;
-                    this.dispatchEvent(new Event('input'));
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+            formData.electricityCost = parseFloat(
